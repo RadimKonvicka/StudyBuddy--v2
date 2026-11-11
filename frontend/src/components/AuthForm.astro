@@ -1,0 +1,93 @@
+---
+// Formulář pro přihlášení i registraci (liší se jen polem „jméno" a cílovým endpointem).
+interface Props { mode: "login" | "register" }
+const { mode } = Astro.props;
+const isReg = mode === "register";
+---
+<div class="min-h-[70vh] grid lg:grid-cols-2 gap-10 items-center">
+  <section class="hidden lg:block">
+    <p class="text-sm font-semibold uppercase tracking-widest text-accent mb-3">Souhvězdí znalostí</p>
+    <h1 class="h-display text-5xl font-semibold leading-tight mb-5">
+      Uč se to, co <em class="text-accent">ještě neumíš</em>.
+    </h1>
+    <p class="text-muted text-lg max-w-md">
+      Nahraj materiál nebo napiš téma. Tým AI agentů z něj připraví vstupní test, zjistí tvoje slabá místa
+      a postaví plán, který se mění s každým procvičením.
+    </p>
+    <ul class="mt-8 space-y-3 text-sm">
+      <li class="flex gap-3"><span class="w-2.5 h-2.5 mt-1.5 rounded-full bg-weak"></span>Slabá podtémata dostanou víc výkladu a kartiček</li>
+      <li class="flex gap-3"><span class="w-2.5 h-2.5 mt-1.5 rounded-full bg-mid"></span>Opakování přesně ve chvíli, kdy začínáš zapomínat</li>
+      <li class="flex gap-3"><span class="w-2.5 h-2.5 mt-1.5 rounded-full bg-strong"></span>Mapa znalostí se rozsvěcí s tím, co zvládneš</li>
+    </ul>
+  </section>
+
+  <section class="card p-6 sm:p-8 w-full max-w-md mx-auto rise">
+    <h2 class="h-display text-3xl font-semibold mb-1">{isReg ? "Vytvořit účet" : "Vítej zpět"}</h2>
+    <p class="text-muted mb-6">{isReg ? "Tvoje data uvidíš jen ty." : "Přihlas se a pokračuj, kde jsi skončil(a)."}</p>
+
+    <form id="auth-form" class="space-y-4" novalidate data-mode={mode}>
+      {isReg && (
+        <div>
+          <label class="label" for="display_name">Jméno</label>
+          <input class="input" id="display_name" name="display_name" autocomplete="nickname" maxlength="80" required />
+        </div>
+      )}
+      <div>
+        <label class="label" for="email">E-mail</label>
+        <input class="input" id="email" name="email" type="email" autocomplete="email" required />
+      </div>
+      <div>
+        <label class="label" for="password">Heslo</label>
+        <input class="input" id="password" name="password" type="password" minlength={isReg ? 8 : 1} maxlength="128"
+          autocomplete={isReg ? "new-password" : "current-password"} required />
+        {isReg && <p class="text-xs text-muted mt-1">Alespoň 8 znaků.</p>}
+      </div>
+      <p id="auth-error" class="text-sm text-weak min-h-5" role="alert"></p>
+      <button class="btn-primary w-full" id="auth-submit">{isReg ? "Zaregistrovat se" : "Přihlásit se"}</button>
+    </form>
+
+    <p class="text-sm text-muted mt-6 text-center">
+      {isReg
+        ? <>Už máš účet? <a href="/login" class="text-accent font-semibold">Přihlas se</a></>
+        : <>Nemáš účet? <a href="/register" class="text-accent font-semibold">Zaregistruj se</a></>}
+    </p>
+  </section>
+</div>
+
+<script>
+  import { api } from "../lib/api.js";
+  import { setSession } from "../lib/auth.js";
+
+  const form = document.getElementById("auth-form") as HTMLFormElement;
+  const errorEl = document.getElementById("auth-error")!;
+  const submit = document.getElementById("auth-submit") as HTMLButtonElement;
+  const mode = form.dataset.mode;
+
+  // Bezpečný návrat: povolíme jen relativní cestu na vlastní web (ochrana proti open redirect).
+  function nextUrl() {
+    const n = new URLSearchParams(location.search).get("next") || "/";
+    return n.startsWith("/") && !n.startsWith("//") ? n : "/";
+  }
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    errorEl.textContent = "";
+    const data = Object.fromEntries(new FormData(form)) as Record<string, string>;
+    if (!data.email || !data.password || (mode === "register" && !data.display_name?.trim())) {
+      errorEl.textContent = "Vyplň prosím všechna pole.";
+      return;
+    }
+    submit.disabled = true;
+    const original = submit.textContent;
+    submit.textContent = "Chvilku…";
+    try {
+      const res = await api(`/api/auth/${mode}`, { method: "POST", body: data, auth: false });
+      setSession(res.access_token, res.user);
+      location.href = nextUrl();
+    } catch (err) {
+      errorEl.textContent = (err as Error).message;
+      submit.disabled = false;
+      submit.textContent = original;
+    }
+  });
+</script>

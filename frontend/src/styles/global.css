@@ -1,0 +1,148 @@
+/* ================================================================
+   StudyBuddy – vizuální identita „Souhvězdí znalostí"
+   Světlý režim = papírová hvězdná mapa, tmavý režim = noční obloha.
+   Barvy jsou CSS proměnné, takže přepnutí režimu je jen změna atributu data-theme.
+   ================================================================ */
+@import "tailwindcss";
+@import "@fontsource-variable/fraunces";
+@import "@fontsource-variable/manrope";
+
+/* Třída dark: platí, když má <html> data-theme="dark" */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+:root {
+  --bg: #f5efe3;          /* papír */
+  --bg-2: #ece4d3;
+  --surface: #fffcf5;
+  --surface-2: #f8f2e6;
+  --ink: #1b2236;         /* inkoust */
+  --muted: #5d6478;
+  --line: #ddd2bd;
+  --accent: #c2410c;      /* rezavě jantarová – kontrastní na papíře */
+  --accent-soft: #fde7cf;
+  --accent-ink: #ffffff;
+  --star: #b45309;
+  --weak: #d9304f;
+  --mid: #d97706;
+  --strong: #15925f;
+  --focus: #2563eb;
+  --shadow: 0 1px 0 rgba(27, 34, 54, .04), 0 8px 24px -12px rgba(27, 34, 54, .18);
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  --bg: #080c1a;          /* noční obloha */
+  --bg-2: #0e1428;
+  --surface: #121a31;
+  --surface-2: #19223d;
+  --ink: #e9edf8;
+  --muted: #98a1bb;
+  --line: #273152;
+  --accent: #fbbf24;      /* hvězdné zlato */
+  --accent-soft: #3a2f12;
+  --accent-ink: #1a1405;
+  --star: #fcd34d;
+  --weak: #fb7185;
+  --mid: #fbbf24;
+  --strong: #34d399;
+  --focus: #93c5fd;
+  --shadow: 0 1px 0 rgba(255, 255, 255, .03), 0 12px 32px -16px rgba(0, 0, 0, .7);
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg-2: var(--bg-2);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-ink: var(--accent-ink);
+  --color-star: var(--star);
+  --color-weak: var(--weak);
+  --color-mid: var(--mid);
+  --color-strong: var(--strong);
+  --font-display: "Fraunces Variable", Georgia, serif;
+  --font-sans: "Manrope Variable", system-ui, sans-serif;
+  --shadow-card: var(--shadow);
+}
+
+html { background: var(--bg); }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Jemné „hvězdné" pozadí – v tmavém režimu výraznější */
+.sky {
+  position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background-image:
+    radial-gradient(1px 1px at 12% 18%, color-mix(in srgb, var(--star) 55%, transparent) 50%, transparent 51%),
+    radial-gradient(1px 1px at 68% 9%, color-mix(in srgb, var(--star) 45%, transparent) 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 84% 42%, color-mix(in srgb, var(--star) 50%, transparent) 50%, transparent 51%),
+    radial-gradient(1px 1px at 32% 72%, color-mix(in srgb, var(--star) 40%, transparent) 50%, transparent 51%),
+    radial-gradient(1.2px 1.2px at 52% 88%, color-mix(in srgb, var(--star) 45%, transparent) 50%, transparent 51%),
+    radial-gradient(1px 1px at 92% 80%, color-mix(in srgb, var(--star) 40%, transparent) 50%, transparent 51%),
+    radial-gradient(900px 500px at 85% -10%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 70%);
+  opacity: .5;
+}
+[data-theme="dark"] .sky { opacity: 1; }
+
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 6px; }
+
+/* ---------- Opakovaně používané komponenty ---------- */
+/* @utility = vlastní třídy, které lze kombinovat s variantami Tailwindu (hover:, sm: …) */
+@utility card { @apply bg-surface border border-line rounded-2xl shadow-card; }
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 font-semibold transition
+         disabled:opacity-50 disabled:cursor-not-allowed active:scale-[.98] cursor-pointer;
+}
+@utility btn-primary { @apply btn bg-accent text-accent-ink hover:brightness-110; }
+@utility btn-ghost { @apply btn border border-line bg-surface hover:bg-surface-2; }
+@utility input {
+  @apply w-full rounded-xl border border-line bg-surface-2 px-4 py-2.5 text-ink placeholder:text-muted
+         focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent;
+}
+@utility label { @apply block text-sm font-semibold mb-1.5; }
+@utility kbd { @apply inline-block rounded-md border border-line bg-surface-2 px-1.5 py-0.5 text-xs font-mono text-muted; }
+@utility chip { @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold; }
+@utility h-display { font-family: var(--font-display); font-variation-settings: "SOFT" 50, "WONK" 0; letter-spacing: -.01em; }
+
+/* ---------- Markdown z AI (vždy prochází DOMPurify) ---------- */
+.md { line-height: 1.7; }
+.md h1, .md h2, .md h3 { font-family: var(--font-display); line-height: 1.25; }
+.md h1 { font-size: 1.6rem; margin: 1.5rem 0 .6rem; }
+.md h2 { font-size: 1.35rem; margin: 1.4rem 0 .5rem; }
+.md h3 { font-size: 1.12rem; margin: 1.1rem 0 .4rem; font-weight: 600; }
+.md p { margin: .6rem 0; }
+.md ul { list-style: disc; padding-left: 1.4rem; margin: .5rem 0; }
+.md ol { list-style: decimal; padding-left: 1.4rem; margin: .5rem 0; }
+.md li { margin: .2rem 0; }
+.md strong { color: var(--accent); font-weight: 700; }
+.md code { background: var(--surface-2); padding: .1rem .35rem; border-radius: .35rem; font-size: .9em; }
+.md pre { background: var(--surface-2); padding: 1rem; border-radius: .75rem; overflow-x: auto; }
+.md blockquote { border-left: 3px solid var(--accent); padding-left: 1rem; color: var(--muted); }
+.md table { width: 100%; border-collapse: collapse; margin: .8rem 0; font-size: .95em; }
+.md th, .md td { border: 1px solid var(--line); padding: .4rem .6rem; text-align: left; }
+.md a { color: var(--accent); text-decoration: underline; }
+
+/* ---------- Kartička s otočením ---------- */
+.flip { perspective: 1200px; }
+.flip-inner { transition: transform .55s cubic-bezier(.2,.7,.2,1); transform-style: preserve-3d; position: relative; }
+.flip.flipped .flip-inner { transform: rotateY(180deg); }
+.face { backface-visibility: hidden; position: absolute; inset: 0; }
+.face.back { transform: rotateY(180deg); }
+
+@keyframes twinkle { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+.twinkle { animation: twinkle 2.4s ease-in-out infinite; }
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.rise { animation: rise .35s ease-out both; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
